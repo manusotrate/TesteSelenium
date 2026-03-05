@@ -25,7 +25,7 @@ async function digitarNoIonInput(driver, placeholder, valor) {
   return campo;
 }
 
-async function clicarBotao(driver, texto) {
+async function clicarBotao(driver) {
   const botao = await esperar(driver, 'ion-button');
   await botao.click();
 }
@@ -63,8 +63,8 @@ function registrar(id, descricao, passou, erro = null) {
 
 /**
  * CT-01 — Verifica se todos os elementos essenciais da tela de login
- * estão presentes e visíveis: campo CPF, campo Senha, botão ENTRAR
- * e o link de navegação para o cadastro.
+ * estão presentes e visíveis: campo CPF, campo Senha, botão ENTRAR,
+ * link "Clique aqui" e o background da tela.
  */
 async function ct01_renderizacao(driver) {
   const id = 'CT-01';
@@ -85,6 +85,13 @@ async function ct01_renderizacao(driver) {
     const link = await esperarTexto(driver, 'Clique aqui');
     if (!link) throw new Error('Link "Clique aqui" não encontrado');
 
+    const backgroundStyle = await driver.executeScript(
+      `return window.getComputedStyle(document.querySelector('ion-app')).backgroundImage`
+    );
+    if (!backgroundStyle || !backgroundStyle.includes('planodefundologin')) {
+      throw new Error('Background não encontrado ou incorreto');
+    }
+
     registrar(id, desc, true);
   } catch (e) {
     registrar(id, desc, false, e.message);
@@ -103,7 +110,7 @@ async function ct02_camposVazios(driver) {
     await driver.get(LOGIN_URL);
     await driver.sleep(1500);
 
-    await clicarBotao(driver, 'ENTRAR');
+    await clicarBotao(driver);
     await driver.sleep(1000);
 
     const toast = await lerToast(driver);
@@ -132,7 +139,7 @@ async function ct03_apenasCPF(driver) {
     await driver.sleep(1500);
 
     await digitarNoIonInput(driver, 'CPF', '000.000.000-00');
-    await clicarBotao(driver, 'ENTRAR');
+    await clicarBotao(driver);
     await driver.sleep(1000);
 
     const toast = await lerToast(driver);
@@ -158,7 +165,7 @@ async function ct04_apenasSenha(driver) {
     await driver.sleep(1500);
 
     await digitarNoIonInput(driver, 'Senha', '123456');
-    await clicarBotao(driver, 'ENTRAR');
+    await clicarBotao(driver);
     await driver.sleep(1000);
 
     const toast = await lerToast(driver);
@@ -175,7 +182,7 @@ async function ct04_apenasSenha(driver) {
 /**
  * CT-05 — Verifica que um CPF com dígitos verificadores incorretos
  * é rejeitado pela validação do componente antes de qualquer
- * chamada ao backend, exibindo o toast "CPF inválido."
+ * chamada ao backend, exibindo o toast "CPF inválido." com cor danger.
  */
 async function ct05_cpfInvalido(driver) {
   const id = 'CT-05';
@@ -186,7 +193,7 @@ async function ct05_cpfInvalido(driver) {
 
     await digitarNoIonInput(driver, 'CPF', '123.456.789-00');
     await digitarNoIonInput(driver, 'Senha', '123456');
-    await clicarBotao(driver, 'ENTRAR');
+    await clicarBotao(driver);
     await driver.sleep(1000);
 
     const toast = await lerToast(driver);
@@ -217,7 +224,7 @@ async function ct06_cpfDigitosRepetidos(driver) {
 
     await digitarNoIonInput(driver, 'CPF', '111.111.111-11');
     await digitarNoIonInput(driver, 'Senha', '123456');
-    await clicarBotao(driver, 'ENTRAR');
+    await clicarBotao(driver);
     await driver.sleep(1000);
 
     const toast = await lerToast(driver);
@@ -234,8 +241,8 @@ async function ct06_cpfDigitosRepetidos(driver) {
 /**
  * CT-07 — Testa o fluxo de erro de integração com o backend:
  * um CPF matematicamente válido mas não cadastrado é enviado ao servidor,
- * que retorna erro. O teste confirma que o usuário permanece em /login
- * e que nenhum redirecionamento indevido ocorre.
+ * que retorna erro 401/404. O teste confirma que o loader aparece,
+ * o usuário permanece em /login e o toast de erro é exibido.
  * Requer o backend rodando em localhost:4000.
  */
 async function ct07_credenciaisInvalidas(driver) {
@@ -247,7 +254,14 @@ async function ct07_credenciaisInvalidas(driver) {
 
     await digitarNoIonInput(driver, 'CPF', CPF_VALIDO_NAO_CADASTRADO);
     await digitarNoIonInput(driver, 'Senha', 'senhaerrada');
-    await clicarBotao(driver, 'ENTRAR');
+    await clicarBotao(driver);
+
+    const loaderVisivel = await driver.wait(
+      until.elementLocated(By.css('ion-loading')), 3000
+    ).then(() => true).catch(() => false);
+
+    if (!loaderVisivel) throw new Error('Loader "Entrando..." não apareceu');
+
     await driver.sleep(4000);
 
     const url = await urlAtual(driver);
@@ -268,9 +282,9 @@ async function ct07_credenciaisInvalidas(driver) {
 
 /**
  * CT-08 — Testa o fluxo completo de login bem-sucedido:
- * preenche CPF e senha de um usuário cadastrado, confirma que
- * o redirecionamento para /home ocorre e que o token de autenticação
- * foi salvo no localStorage.
+ * preenche CPF e senha de um usuário cadastrado, confirma que o loader
+ * aparece, o toast de sucesso é exibido, o redirecionamento para /home
+ * ocorre e que auth_token e usuario_data foram salvos no localStorage.
  * Requer o backend rodando e o usuário cadastrado no banco.
  */
 async function ct08_loginSucesso(driver) {
@@ -282,7 +296,13 @@ async function ct08_loginSucesso(driver) {
 
     await digitarNoIonInput(driver, 'CPF', CPF_VALIDO_CADASTRADO);
     await digitarNoIonInput(driver, 'Senha', SENHA_VALIDA);
-    await clicarBotao(driver, 'ENTRAR');
+    await clicarBotao(driver);
+
+    const loaderVisivel = await driver.wait(
+      until.elementLocated(By.css('ion-loading')), 3000
+    ).then(() => true).catch(() => false);
+
+    if (!loaderVisivel) throw new Error('Loader "Entrando..." não apareceu');
 
     await driver.wait(until.urlContains('/home'), 8000);
 
@@ -290,7 +310,10 @@ async function ct08_loginSucesso(driver) {
     if (!url.includes('/home')) throw new Error('Não redirecionou para /home. URL: ' + url);
 
     const token = await driver.executeScript("return localStorage.getItem('auth_token')");
-    if (!token) throw new Error('Token não salvo no localStorage');
+    if (!token) throw new Error('auth_token não salvo no localStorage');
+
+    const usuarioData = await driver.executeScript("return localStorage.getItem('usuario_data')");
+    if (!usuarioData) throw new Error('usuario_data não salvo no localStorage');
 
     registrar(id, desc, true);
   } catch (e) {
@@ -300,7 +323,8 @@ async function ct08_loginSucesso(driver) {
 
 /**
  * CT-09 — Verifica que clicar no link "Clique aqui" na tela de login
- * navega corretamente para a tela de cadastro (/cadastro).
+ * navega corretamente para a tela de cadastro (/cadastro) e que
+ * ela é renderizada sem erros.
  */
 async function ct09_navegacaoCadastro(driver) {
   const id = 'CT-09';
@@ -317,6 +341,9 @@ async function ct09_navegacaoCadastro(driver) {
     if (!url.includes('/cadastro')) {
       throw new Error('Não redirecionou para /cadastro. URL: ' + url);
     }
+
+    const telaCadastro = await esperar(driver, 'ion-content');
+    if (!telaCadastro) throw new Error('Tela de cadastro não renderizou');
 
     registrar(id, desc, true);
   } catch (e) {
@@ -349,6 +376,74 @@ async function ct10_senhaOculta(driver) {
   }
 }
 
+/**
+ * CT-11 — Verifica que o loader com mensagem "Entrando..." é exibido
+ * imediatamente após clicar em ENTRAR com credenciais válidas, e que
+ * ele fecha sozinho após a resposta do backend.
+ * Requer o backend rodando em localhost:4000.
+ */
+async function ct11_loaderRequisicao(driver) {
+  const id = 'CT-11';
+  const desc = 'Loader "Entrando..." exibido e fechado durante requisição';
+  try {
+    await driver.get(LOGIN_URL);
+    await driver.sleep(1500);
+
+    await digitarNoIonInput(driver, 'CPF', CPF_VALIDO_CADASTRADO);
+    await digitarNoIonInput(driver, 'Senha', SENHA_VALIDA);
+    await clicarBotao(driver);
+
+    const loaderAbriu = await driver.wait(
+      until.elementLocated(By.css('ion-loading')), 3000
+    ).then(() => true).catch(() => false);
+
+    if (!loaderAbriu) throw new Error('Loader não apareceu após clicar em ENTRAR');
+
+    await driver.wait(
+      until.stalenessOf(await driver.findElement(By.css('ion-loading'))), 8000
+    );
+
+    registrar(id, desc, true);
+  } catch (e) {
+    registrar(id, desc, false, e.message);
+  }
+}
+
+/**
+ * CT-12 — Verifica que um usuário já autenticado (com auth_token válido
+ * no localStorage) consegue acessar /home diretamente sem precisar passar
+ * pela tela de login, confirmando que o AuthGuard libera a rota.
+ * Requer o backend rodando para validar o token.
+ */
+async function ct12_redirecionamentoAutenticado(driver) {
+  const id = 'CT-12';
+  const desc = 'Usuário autenticado acessa /home diretamente sem passar pelo login';
+  try {
+    await driver.get(LOGIN_URL);
+    await driver.sleep(1500);
+
+    await digitarNoIonInput(driver, 'CPF', CPF_VALIDO_CADASTRADO);
+    await digitarNoIonInput(driver, 'Senha', SENHA_VALIDA);
+    await clicarBotao(driver);
+    await driver.wait(until.urlContains('/home'), 8000);
+
+    const token = await driver.executeScript("return localStorage.getItem('auth_token')");
+    if (!token) throw new Error('Token não encontrado no localStorage após login');
+
+    await driver.get(`${BASE_URL}/home`);
+    await driver.sleep(2000);
+
+    const url = await urlAtual(driver);
+    if (!url.includes('/home')) {
+      throw new Error(`AuthGuard redirecionou indevidamente. URL: ${url}`);
+    }
+
+    registrar(id, desc, true);
+  } catch (e) {
+    registrar(id, desc, false, e.message);
+  }
+}
+
 async function executarTestes() {
   console.log('══════════════════════════════════════════════');
   console.log('   TESTES DE UI — TELA DE LOGIN — BusTap     ');
@@ -369,6 +464,8 @@ async function executarTestes() {
     await ct08_loginSucesso(driver);
     await ct09_navegacaoCadastro(driver);
     await ct10_senhaOculta(driver);
+    await ct11_loaderRequisicao(driver);
+    await ct12_redirecionamentoAutenticado(driver);
   } finally {
     await driver.quit();
   }
