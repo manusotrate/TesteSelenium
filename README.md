@@ -1,12 +1,3 @@
-# Roteiro de Testes — Tela de Login (BusTap)
-
-**Projeto:** BusTap  
-**Tela:** Login (`/login`)  
-**Componente:** `LoginComponent` (`src/app/login/login.component.ts`)  
-**URL base para testes:** `http://localhost:8100/login`
-
----
-
 ## Visão Geral
 
 A tela de login do BusTap possui os seguintes elementos funcionais:
