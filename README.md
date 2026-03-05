@@ -236,22 +236,3 @@ Validações implementadas no componente:
 | 3 | Verificar comportamento | Usuário acessa `/home` sem passar pelo login |
 
 **Resultado:** ✅ / ❌
-
----
-
-## Resumo dos Casos
-
-| ID | Descrição | Tipo | Prioridade |
-|----|-----------|------|------------|
-| CT-01 | Renderização da tela | Smoke | Alta |
-| CT-02 | Campos vazios | Negativo | Alta |
-| CT-03 | Só CPF preenchido | Negativo | Alta |
-| CT-04 | Só senha preenchida | Negativo | Alta |
-| CT-05 | CPF com formato inválido | Negativo | Alta |
-| CT-06 | CPF com dígitos repetidos | Negativo | Média |
-| CT-07 | Credenciais não cadastradas | Integração | Alta |
-| CT-08 | Login com sucesso | Positivo | Alta |
-| CT-09 | Navegar para cadastro | Navegação | Média |
-| CT-10 | Campo senha mascarado | Funcional | Baixa |
-| CT-11 | Loader durante requisição | UX | Média |
-| CT-12 | Redirecionamento autenticado | Segurança | Alta |
