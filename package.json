@@ -1,0 +1,19 @@
+{
+  "name": "testeselenium",
+  "version": "1.0.0",
+  "description": "**Projeto:** BusTap  \r **Tela:** Login (`/login`)  \r **Componente:** `LoginComponent` (`src/app/login/login.component.ts`)  \r **URL base para testes:** `http://localhost:8100/login`",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/manusotrate/TesteSelenium.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/manusotrate/TesteSelenium/issues"
+  },
+  "homepage": "https://github.com/manusotrate/TesteSelenium#readme"
+}
